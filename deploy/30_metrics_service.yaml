@@ -5,11 +5,13 @@ metadata:
     name: aws-vpce-operator
   name: aws-vpce-operator-metrics
   namespace: openshift-aws-vpce-operator
+  annotations:
+    service.beta.openshift.io/serving-cert-secret-name: aws-vpce-operator-tls
 spec:
   selector:
     name: aws-vpce-operator
   ports:
-    - name: http-metrics
-      port: 80
+    - name: metrics
+      port: 8080
       protocol: TCP
       targetPort: 8080

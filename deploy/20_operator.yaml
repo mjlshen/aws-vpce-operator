@@ -83,6 +83,10 @@ spec:
             - name: avo-config
               mountPath: /avo
               readOnly: true
+              # Needs kube-rbac-proxy
+            - name: aws-vpce-operator-metrics-cert
+              mountPath: /certs
+              readyOnly: true
       volumes:
         - name: openshift-sa-token
           projected:
@@ -90,6 +94,10 @@ spec:
               - serviceAccountToken:
                   path: token
                   audience: openshift
+        - name: aws-vpce-operator-tls
+          secret:
+            defaultMode: 420
+            secretName: aws-vpce-operator-tls
         - name: avo-aws-creds
           secret:
             secretName: avo-aws-creds
