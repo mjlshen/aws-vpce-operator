@@ -40,13 +40,13 @@ const (
 )
 
 type MockedEC2 struct {
-	AvoEC2API
+	VpcEndpointEC2API
 
 	Subnets []*ec2Types.Subnet
 }
 
 type MockedRoute53 struct {
-	AvoRoute53API
+	VpcEndpointRoute53API
 }
 
 var mockResourceRecordSet = &route53Types.ResourceRecordSet{
@@ -88,15 +88,15 @@ func NewMockedEC2WithSubnets() *MockedEC2 {
 	}
 }
 
-func NewMockedAwsClient() *AWSClient {
+func NewMockedAwsClient() *VpcEndpoint {
 	return NewAwsClientWithServiceClients(&MockedEC2{}, &MockedRoute53{})
 }
 
-func NewMockedVpceAcceptanceAwsClient() *VpcEndpointAcceptanceAWSClient {
+func NewMockedVpceAcceptanceAwsClient() *VpcEndpointAcceptance {
 	return NewVpcEndpointAcceptanceAwsClientWithServiceClients(&MockedEC2{})
 }
 
-func NewMockedAwsClientWithSubnets() *AWSClient {
+func NewMockedAwsClientWithSubnets() *VpcEndpoint {
 	return NewAwsClientWithServiceClients(NewMockedEC2WithSubnets(), &MockedRoute53{})
 }
 

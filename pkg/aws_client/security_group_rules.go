@@ -25,8 +25,8 @@ import (
 )
 
 // DescribeSecurityGroupRules describes the security group rules attached to a specific security group id
-func (c *AWSClient) DescribeSecurityGroupRules(ctx context.Context, groupId string) (*ec2.DescribeSecurityGroupRulesOutput, error) {
-	return c.ec2Client.DescribeSecurityGroupRules(ctx, &ec2.DescribeSecurityGroupRulesInput{
+func (c *VpcEndpoint) DescribeSecurityGroupRules(ctx context.Context, groupId string) (*ec2.DescribeSecurityGroupRulesOutput, error) {
+	return c.EC2API.DescribeSecurityGroupRules(ctx, &ec2.DescribeSecurityGroupRulesInput{
 		Filters: []types.Filter{
 			{
 				Name:   aws.String("group-id"),
@@ -38,11 +38,11 @@ func (c *AWSClient) DescribeSecurityGroupRules(ctx context.Context, groupId stri
 
 // AuthorizeSecurityGroupRules authorizes provided ingress and egress rules for a security group,
 // returning the updated security group rules and any errors
-func (c *AWSClient) AuthorizeSecurityGroupRules(ctx context.Context, ingress *ec2.AuthorizeSecurityGroupIngressInput, egress *ec2.AuthorizeSecurityGroupEgressInput) ([]types.SecurityGroupRule, error) {
+func (c *VpcEndpoint) AuthorizeSecurityGroupRules(ctx context.Context, ingress *ec2.AuthorizeSecurityGroupIngressInput, egress *ec2.AuthorizeSecurityGroupEgressInput) ([]types.SecurityGroupRule, error) {
 	var rules []types.SecurityGroupRule
 
 	if len(ingress.IpPermissions) > 0 {
-		ingressResp, err := c.ec2Client.AuthorizeSecurityGroupIngress(ctx, ingress)
+		ingressResp, err := c.EC2API.AuthorizeSecurityGroupIngress(ctx, ingress)
 		if err != nil {
 			return nil, err
 		}
@@ -50,7 +50,7 @@ func (c *AWSClient) AuthorizeSecurityGroupRules(ctx context.Context, ingress *ec
 	}
 
 	if len(egress.IpPermissions) > 0 {
-		egressResp, err := c.ec2Client.AuthorizeSecurityGroupEgress(ctx, egress)
+		egressResp, err := c.EC2API.AuthorizeSecurityGroupEgress(ctx, egress)
 		if err != nil {
 			return nil, err
 		}

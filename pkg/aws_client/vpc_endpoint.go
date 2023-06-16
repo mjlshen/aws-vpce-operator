@@ -33,7 +33,7 @@ import (
 // SelectVPCForVPCEndpoint uses a "least connection" strategy to place a VPC Endpoint in the provided VPC ID with the
 // fewest existing VPC Endpoints in it to balance out quota usage.
 // https://docs.aws.amazon.com/vpc/latest/userguide/amazon-vpc-limits.html#vpc-limits-endpoints
-func (c *AWSClient) SelectVPCForVPCEndpoint(ctx context.Context, ids ...string) (string, error) {
+func (c *VpcEndpoint) SelectVPCForVPCEndpoint(ctx context.Context, ids ...string) (string, error) {
 	if len(ids) == 0 {
 		return "", errors.New("must specify vpc id when counting VPC Endpoints per VPC")
 	}
@@ -54,7 +54,7 @@ func (c *AWSClient) SelectVPCForVPCEndpoint(ctx context.Context, ids ...string) 
 		vpcePerVpc[id] = 0
 	}
 
-	paginator := ec2.NewDescribeVpcEndpointsPaginator(c.ec2Client, input)
+	paginator := ec2.NewDescribeVpcEndpointsPaginator(c.EC2API, input)
 	for paginator.HasMorePages() {
 		resp, err := paginator.NextPage(ctx)
 		if err != nil {
@@ -81,7 +81,7 @@ func (c *AWSClient) SelectVPCForVPCEndpoint(ctx context.Context, ids ...string) 
 }
 
 // FilterVpcIdsByTags tags in a list of tags and returns a list of AWS VPC Ids that have all of the provided tags
-func (c *AWSClient) FilterVpcIdsByTags(ctx context.Context, tags []avov1alpha2.Tag) ([]string, error) {
+func (c *VpcEndpoint) FilterVpcIdsByTags(ctx context.Context, tags []avov1alpha2.Tag) ([]string, error) {
 	if len(tags) == 0 {
 		return nil, errors.New("must specify tags when filtering VPCs by tags")
 	}
@@ -94,7 +94,7 @@ func (c *AWSClient) FilterVpcIdsByTags(ctx context.Context, tags []avov1alpha2.T
 		}
 	}
 
-	resp, err := c.ec2Client.DescribeVpcs(ctx, &ec2.DescribeVpcsInput{
+	resp, err := c.EC2API.DescribeVpcs(ctx, &ec2.DescribeVpcsInput{
 		Filters: filters,
 	})
 	if err != nil {
@@ -114,7 +114,7 @@ func (c *AWSClient) FilterVpcIdsByTags(ctx context.Context, tags []avov1alpha2.T
 }
 
 // DescribeSingleVPCEndpointById returns information about a VPC endpoint with a given id.
-func (c *AWSClient) DescribeSingleVPCEndpointById(ctx context.Context, id string) (*ec2.DescribeVpcEndpointsOutput, error) {
+func (c *VpcEndpoint) DescribeSingleVPCEndpointById(ctx context.Context, id string) (*ec2.DescribeVpcEndpointsOutput, error) {
 	if id == "" {
 		// Otherwise, AWS will return all VPC endpoints (interpreting as no specified filter)
 		return &ec2.DescribeVpcEndpointsOutput{}, nil
@@ -124,7 +124,7 @@ func (c *AWSClient) DescribeSingleVPCEndpointById(ctx context.Context, id string
 		VpcEndpointIds: []string{id},
 	}
 
-	resp, err := c.ec2Client.DescribeVpcEndpoints(ctx, input)
+	resp, err := c.EC2API.DescribeVpcEndpoints(ctx, input)
 	if err != nil {
 		var ae smithy.APIError
 		if errors.As(err, &ae) {
@@ -144,12 +144,12 @@ func (c *AWSClient) DescribeSingleVPCEndpointById(ctx context.Context, id string
 }
 
 // FilterVPCEndpointByDefaultTags returns information about a VPC endpoint with the default expected tags.
-func (c *AWSClient) FilterVPCEndpointByDefaultTags(ctx context.Context, clusterTag, vpceNameTag string) (*ec2.DescribeVpcEndpointsOutput, error) {
+func (c *VpcEndpoint) FilterVPCEndpointByDefaultTags(ctx context.Context, clusterTag, vpceNameTag string) (*ec2.DescribeVpcEndpointsOutput, error) {
 	if clusterTag == "" {
 		return &ec2.DescribeVpcEndpointsOutput{}, nil
 	}
 
-	return c.ec2Client.DescribeVpcEndpoints(ctx, &ec2.DescribeVpcEndpointsInput{
+	return c.EC2API.DescribeVpcEndpoints(ctx, &ec2.DescribeVpcEndpointsInput{
 		Filters: []types.Filter{
 			{
 				Name:   aws.String("tag:Name"),
@@ -170,7 +170,7 @@ func (c *AWSClient) FilterVPCEndpointByDefaultTags(ctx context.Context, clusterT
 // CreateDefaultInterfaceVPCEndpoint creates an interface VPC endpoint with
 // the default (open to all) VPC Endpoint policy. It attaches no security groups
 // nor associates the VPC Endpoint with any subnets.
-func (c *AWSClient) CreateDefaultInterfaceVPCEndpoint(ctx context.Context, name, vpcId, serviceName, tagKey string) (*ec2.CreateVpcEndpointOutput, error) {
+func (c *VpcEndpoint) CreateDefaultInterfaceVPCEndpoint(ctx context.Context, name, vpcId, serviceName, tagKey string) (*ec2.CreateVpcEndpointOutput, error) {
 	tags, err := util.GenerateAwsTags(name, tagKey)
 	if err != nil {
 		return nil, err
@@ -190,19 +190,19 @@ func (c *AWSClient) CreateDefaultInterfaceVPCEndpoint(ctx context.Context, name,
 		},
 	}
 
-	return c.ec2Client.CreateVpcEndpoint(ctx, input)
+	return c.EC2API.CreateVpcEndpoint(ctx, input)
 }
 
 // DeleteVPCEndpoint deletes a VPC endpoint with the given id.
-func (c *AWSClient) DeleteVPCEndpoint(ctx context.Context, id string) (*ec2.DeleteVpcEndpointsOutput, error) {
+func (c *VpcEndpoint) DeleteVPCEndpoint(ctx context.Context, id string) (*ec2.DeleteVpcEndpointsOutput, error) {
 	input := &ec2.DeleteVpcEndpointsInput{
 		VpcEndpointIds: []string{id},
 	}
 
-	return c.ec2Client.DeleteVpcEndpoints(ctx, input)
+	return c.EC2API.DeleteVpcEndpoints(ctx, input)
 }
 
 // ModifyVpcEndpoint modifies a VPC endpoint
-func (c *AWSClient) ModifyVpcEndpoint(ctx context.Context, input *ec2.ModifyVpcEndpointInput) (*ec2.ModifyVpcEndpointOutput, error) {
-	return c.ec2Client.ModifyVpcEndpoint(ctx, input)
+func (c *VpcEndpoint) ModifyVpcEndpoint(ctx context.Context, input *ec2.ModifyVpcEndpointInput) (*ec2.ModifyVpcEndpointOutput, error) {
+	return c.EC2API.ModifyVpcEndpoint(ctx, input)
 }

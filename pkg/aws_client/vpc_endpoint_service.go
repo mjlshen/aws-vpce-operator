@@ -27,7 +27,7 @@ import (
 )
 
 // GetVpcEndpointServiceAZs returns a slice of strings indicating which AZs the specified VPC Endpoint Service supports
-func (c *AWSClient) GetVpcEndpointServiceAZs(ctx context.Context, serviceName string) ([]string, error) {
+func (c *VpcEndpoint) GetVpcEndpointServiceAZs(ctx context.Context, serviceName string) ([]string, error) {
 	if serviceName == "" {
 		return nil, errors.New("GetVpcEndpointServiceAZs: serviceName must be specified")
 	}
@@ -36,7 +36,7 @@ func (c *AWSClient) GetVpcEndpointServiceAZs(ctx context.Context, serviceName st
 		ServiceNames: []string{serviceName},
 	}
 
-	resp, err := c.ec2Client.DescribeVpcEndpointServices(ctx, input)
+	resp, err := c.EC2API.DescribeVpcEndpointServices(ctx, input)
 	if err != nil {
 		return nil, err
 	}
@@ -49,7 +49,7 @@ func (c *AWSClient) GetVpcEndpointServiceAZs(ctx context.Context, serviceName st
 }
 
 // GetVpcEndpointConnectionsPendingAcceptance returns information about a VPC endpoint with a given id.
-func (c *VpcEndpointAcceptanceAWSClient) GetVpcEndpointConnectionsPendingAcceptance(ctx context.Context, id string) (*ec2.DescribeVpcEndpointConnectionsOutput, error) {
+func (c *VpcEndpointAcceptance) GetVpcEndpointConnectionsPendingAcceptance(ctx context.Context, id string) (*ec2.DescribeVpcEndpointConnectionsOutput, error) {
 	if id == "" {
 		// Otherwise, AWS will return all VPC endpoints (interpreting as no specified filter)
 		return &ec2.DescribeVpcEndpointConnectionsOutput{VpcEndpointConnections: []types.VpcEndpointConnection{}}, nil
@@ -68,12 +68,12 @@ func (c *VpcEndpointAcceptanceAWSClient) GetVpcEndpointConnectionsPendingAccepta
 		},
 	}
 
-	return c.ec2Client.DescribeVpcEndpointConnections(ctx, input)
+	return c.EC2API.DescribeVpcEndpointConnections(ctx, input)
 }
 
 // AcceptVpcEndpointConnections is a wrapper around ec2:AcceptVpcEndpointConnections for a give VPC Endpoint serviceId
 // and a slice of vpcEndpointIds
-func (c *VpcEndpointAcceptanceAWSClient) AcceptVpcEndpointConnections(ctx context.Context, serviceId string, vpcEndpointIds ...string) (*ec2.AcceptVpcEndpointConnectionsOutput, error) {
+func (c *VpcEndpointAcceptance) AcceptVpcEndpointConnections(ctx context.Context, serviceId string, vpcEndpointIds ...string) (*ec2.AcceptVpcEndpointConnectionsOutput, error) {
 	if len(vpcEndpointIds) == 0 {
 		return &ec2.AcceptVpcEndpointConnectionsOutput{}, nil
 	}
@@ -83,5 +83,5 @@ func (c *VpcEndpointAcceptanceAWSClient) AcceptVpcEndpointConnections(ctx contex
 		VpcEndpointIds: vpcEndpointIds,
 	}
 
-	return c.ec2Client.AcceptVpcEndpointConnections(ctx, input)
+	return c.EC2API.AcceptVpcEndpointConnections(ctx, input)
 }

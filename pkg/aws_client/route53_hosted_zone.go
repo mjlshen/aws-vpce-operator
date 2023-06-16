@@ -27,7 +27,7 @@ import (
 )
 
 // GetDefaultPrivateHostedZoneId returns the cluster's Route53 private hosted zone
-func (c *AWSClient) GetDefaultPrivateHostedZoneId(ctx context.Context, domainName, vpcId, region string) (*types.HostedZoneSummary, error) {
+func (c *VpcEndpoint) GetDefaultPrivateHostedZoneId(ctx context.Context, domainName, vpcId, region string) (*types.HostedZoneSummary, error) {
 	resp, err := c.ListHostedZonesByVPC(ctx, vpcId, region)
 	if err != nil {
 		return nil, err
@@ -44,30 +44,30 @@ func (c *AWSClient) GetDefaultPrivateHostedZoneId(ctx context.Context, domainNam
 }
 
 // GetHostedZone is a wrapper around Route53 GetHostedZone
-func (c *AWSClient) GetHostedZone(ctx context.Context, id string) (*route53.GetHostedZoneOutput, error) {
+func (c *VpcEndpoint) GetHostedZone(ctx context.Context, id string) (*route53.GetHostedZoneOutput, error) {
 	fullId := fmt.Sprintf("/hostedzone/%s", id)
-	return c.route53Client.GetHostedZone(ctx, &route53.GetHostedZoneInput{Id: aws.String(fullId)})
+	return c.Route53API.GetHostedZone(ctx, &route53.GetHostedZoneInput{Id: aws.String(fullId)})
 }
 
 // ListHostedZonesByVPC is a wrapper around route53:ListHostedZonesByVPC
-func (c *AWSClient) ListHostedZonesByVPC(ctx context.Context, vpc, region string) (*route53.ListHostedZonesByVPCOutput, error) {
+func (c *VpcEndpoint) ListHostedZonesByVPC(ctx context.Context, vpc, region string) (*route53.ListHostedZonesByVPCOutput, error) {
 	input := &route53.ListHostedZonesByVPCInput{
 		VPCId:     aws.String(vpc),
 		VPCRegion: types.VPCRegion(region),
 	}
 
 	// TODO: Unlikely, but would be nice to handle pagination
-	return c.route53Client.ListHostedZonesByVPC(ctx, input)
+	return c.Route53API.ListHostedZonesByVPC(ctx, input)
 }
 
 // ListResourceRecordSets returns a list of records for a given hosted zone ID
-func (c *AWSClient) ListResourceRecordSets(ctx context.Context, hostedZoneId string) (*route53.ListResourceRecordSetsOutput, error) {
+func (c *VpcEndpoint) ListResourceRecordSets(ctx context.Context, hostedZoneId string) (*route53.ListResourceRecordSetsOutput, error) {
 	input := &route53.ListResourceRecordSetsInput{
 		HostedZoneId: aws.String(hostedZoneId),
 	}
 
 	// TODO: Handle pagination
-	resp, err := c.route53Client.ListResourceRecordSets(ctx, input)
+	resp, err := c.Route53API.ListResourceRecordSets(ctx, input)
 	if err != nil {
 		return nil, err
 	}
@@ -76,7 +76,7 @@ func (c *AWSClient) ListResourceRecordSets(ctx context.Context, hostedZoneId str
 }
 
 // UpsertResourceRecordSet updates or creates a resource record set
-func (c *AWSClient) UpsertResourceRecordSet(ctx context.Context, rrs *types.ResourceRecordSet, hostedZoneId string) (*route53.ChangeResourceRecordSetsOutput, error) {
+func (c *VpcEndpoint) UpsertResourceRecordSet(ctx context.Context, rrs *types.ResourceRecordSet, hostedZoneId string) (*route53.ChangeResourceRecordSetsOutput, error) {
 	input := &route53.ChangeResourceRecordSetsInput{
 		ChangeBatch: &types.ChangeBatch{
 			Changes: []types.Change{
@@ -91,12 +91,12 @@ func (c *AWSClient) UpsertResourceRecordSet(ctx context.Context, rrs *types.Reso
 		HostedZoneId: aws.String(hostedZoneId),
 	}
 
-	return c.route53Client.ChangeResourceRecordSets(ctx, input)
+	return c.Route53API.ChangeResourceRecordSets(ctx, input)
 }
 
 // DeleteResourceRecordSet deletes a specific record from a hosted zone
 // NOTE: To delete a resource record set, you must specify all the same values that you specified when you created it.
-func (c *AWSClient) DeleteResourceRecordSet(ctx context.Context, rrs *types.ResourceRecordSet, hostedZoneId string) (*route53.ChangeResourceRecordSetsOutput, error) {
+func (c *VpcEndpoint) DeleteResourceRecordSet(ctx context.Context, rrs *types.ResourceRecordSet, hostedZoneId string) (*route53.ChangeResourceRecordSetsOutput, error) {
 	input := &route53.ChangeResourceRecordSetsInput{
 		ChangeBatch: &types.ChangeBatch{
 			Changes: []types.Change{
@@ -110,12 +110,12 @@ func (c *AWSClient) DeleteResourceRecordSet(ctx context.Context, rrs *types.Reso
 		HostedZoneId: aws.String(hostedZoneId),
 	}
 
-	return c.route53Client.ChangeResourceRecordSets(ctx, input)
+	return c.Route53API.ChangeResourceRecordSets(ctx, input)
 }
 
 // CreateHostedZone creates a Route 53 Private Hosted Zone with the specified domain, associated to the specified
 // vpcId + region.
-func (c *AWSClient) CreateHostedZone(ctx context.Context, domain, vpcId, region string) (*route53.CreateHostedZoneOutput, error) {
+func (c *VpcEndpoint) CreateHostedZone(ctx context.Context, domain, vpcId, region string) (*route53.CreateHostedZoneOutput, error) {
 	zoneInput := &route53.CreateHostedZoneInput{
 		CallerReference: aws.String(time.Now().String()),
 		Name:            aws.String(domain),
@@ -125,16 +125,16 @@ func (c *AWSClient) CreateHostedZone(ctx context.Context, domain, vpcId, region 
 		},
 		VPC: &types.VPC{VPCId: aws.String(vpcId), VPCRegion: types.VPCRegion(region)},
 	}
-	return c.route53Client.CreateHostedZone(ctx, zoneInput)
+	return c.Route53API.CreateHostedZone(ctx, zoneInput)
 }
 
 // DeleteHostedZone deletes a Route 53 Hosted Zone by ID
-func (c *AWSClient) DeleteHostedZone(ctx context.Context, id string) (*route53.DeleteHostedZoneOutput, error) {
-	return c.route53Client.DeleteHostedZone(ctx, &route53.DeleteHostedZoneInput{Id: aws.String(id)})
+func (c *VpcEndpoint) DeleteHostedZone(ctx context.Context, id string) (*route53.DeleteHostedZoneOutput, error) {
+	return c.Route53API.DeleteHostedZone(ctx, &route53.DeleteHostedZoneInput{Id: aws.String(id)})
 }
 
 // GenerateDefaultTagsForHostedZoneInput generates the ChangeTagsForResourceInput using the default tags for the zoneId
-func (c *AWSClient) GenerateDefaultTagsForHostedZoneInput(zoneId, clusterTagKey string) (*route53.ChangeTagsForResourceInput, error) {
+func (c *VpcEndpoint) GenerateDefaultTagsForHostedZoneInput(zoneId, clusterTagKey string) (*route53.ChangeTagsForResourceInput, error) {
 	defaultTags, err := util.GenerateR53Tags(clusterTagKey)
 	if err != nil {
 		return nil, err
@@ -151,15 +151,15 @@ func (c *AWSClient) GenerateDefaultTagsForHostedZoneInput(zoneId, clusterTagKey 
 }
 
 // FetchPrivateZoneTags takes context and a Route53 ZoneID and returns the output provided by ListTagsForResource for a hosted zone
-func (c *AWSClient) FetchPrivateZoneTags(ctx context.Context, zoneId string) (*route53.ListTagsForResourceOutput, error) {
-	return c.route53Client.ListTagsForResource(ctx, &route53.ListTagsForResourceInput{
+func (c *VpcEndpoint) FetchPrivateZoneTags(ctx context.Context, zoneId string) (*route53.ListTagsForResourceOutput, error) {
+	return c.Route53API.ListTagsForResource(ctx, &route53.ListTagsForResourceInput{
 		ResourceId:   aws.String(zoneId),
 		ResourceType: types.TagResourceTypeHostedzone,
 	})
 }
 
-func (c *AWSClient) CreateVPCAssociationAuthorization(ctx context.Context, hostedZoneId, vpcId, region string) (*route53.CreateVPCAssociationAuthorizationOutput, error) {
-	return c.route53Client.CreateVPCAssociationAuthorization(ctx, &route53.CreateVPCAssociationAuthorizationInput{
+func (c *VpcEndpoint) CreateVPCAssociationAuthorization(ctx context.Context, hostedZoneId, vpcId, region string) (*route53.CreateVPCAssociationAuthorizationOutput, error) {
+	return c.Route53API.CreateVPCAssociationAuthorization(ctx, &route53.CreateVPCAssociationAuthorizationInput{
 		HostedZoneId: aws.String(hostedZoneId),
 		VPC: &types.VPC{
 			VPCId:     aws.String(vpcId),
@@ -168,8 +168,8 @@ func (c *AWSClient) CreateVPCAssociationAuthorization(ctx context.Context, hoste
 	})
 }
 
-func (a *VpcAssociationClient) AssociateVPCWithHostedZone(ctx context.Context, hostedZoneId, vpcId, region string) (*route53.AssociateVPCWithHostedZoneOutput, error) {
-	return a.route53Client.AssociateVPCWithHostedZone(ctx, &route53.AssociateVPCWithHostedZoneInput{
+func (a *VpcAssociation) AssociateVPCWithHostedZone(ctx context.Context, hostedZoneId, vpcId, region string) (*route53.AssociateVPCWithHostedZoneOutput, error) {
+	return a.Route53API.AssociateVPCWithHostedZone(ctx, &route53.AssociateVPCWithHostedZoneInput{
 		HostedZoneId: aws.String(hostedZoneId),
 		VPC: &types.VPC{
 			VPCId:     aws.String(vpcId),

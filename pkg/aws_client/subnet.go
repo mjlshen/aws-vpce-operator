@@ -30,7 +30,7 @@ import (
 const privateSubnetTagKey = "kubernetes.io/role/internal-elb"
 
 // GetVPCId returns the VPC ID of the provided subnetIds. Returns an error if the subnets are not in the same VPC.
-func (c *AWSClient) GetVPCId(ctx context.Context, subnetIds []string) (string, error) {
+func (c *VpcEndpoint) GetVPCId(ctx context.Context, subnetIds []string) (string, error) {
 	if len(subnetIds) == 0 {
 		return "", errors.New("no subnets provided")
 	}
@@ -39,7 +39,7 @@ func (c *AWSClient) GetVPCId(ctx context.Context, subnetIds []string) (string, e
 		SubnetIds: subnetIds,
 	}
 
-	resp, err := c.ec2Client.DescribeSubnets(ctx, input)
+	resp, err := c.EC2API.DescribeSubnets(ctx, input)
 	if err != nil {
 		return "", fmt.Errorf("failed to describe subnets: %w", err)
 	}
@@ -61,7 +61,7 @@ func (c *AWSClient) GetVPCId(ctx context.Context, subnetIds []string) (string, e
 // AutodiscoverPrivateSubnets attempts to automatically return a slice of ROSA cluster private subnet ids.
 // A ROSA cluster's subnets are tagged with a tag key in AWS: "kubernetes.io/cluster/<cluster-name>".
 // Private subnets for non-BYOVPC clusters also have the `kubernetes.io/role/internal-elb` tag key.
-func (c *AWSClient) AutodiscoverPrivateSubnets(ctx context.Context, clusterTag string) ([]types.Subnet, error) {
+func (c *VpcEndpoint) AutodiscoverPrivateSubnets(ctx context.Context, clusterTag string) ([]types.Subnet, error) {
 	// For non-BYOVPC clusters, resp will contain only the private subnets.
 	nonByovpc, err := c.DescribeSubnetsByTagKey(ctx, clusterTag, privateSubnetTagKey)
 	if err != nil {
@@ -87,7 +87,7 @@ func (c *AWSClient) AutodiscoverPrivateSubnets(ctx context.Context, clusterTag s
 }
 
 // DescribeSubnetsByTagKey returns a list of subnets that have all the specified tag key(s).
-func (c *AWSClient) DescribeSubnetsByTagKey(ctx context.Context, tagKey ...string) (*ec2.DescribeSubnetsOutput, error) {
+func (c *VpcEndpoint) DescribeSubnetsByTagKey(ctx context.Context, tagKey ...string) (*ec2.DescribeSubnetsOutput, error) {
 	filters := []types.Filter{}
 	for _, t := range tagKey {
 		// If a tag-key is empty, don't filter by it as it will exclude all subnets i.e. treat it as bad input.
@@ -104,5 +104,5 @@ func (c *AWSClient) DescribeSubnetsByTagKey(ctx context.Context, tagKey ...strin
 		Filters: filters,
 	}
 
-	return c.ec2Client.DescribeSubnets(ctx, input)
+	return c.EC2API.DescribeSubnets(ctx, input)
 }

@@ -23,16 +23,16 @@ import (
 )
 
 // CreateTags creates tags in an idempotent fashion
-func (c *AWSClient) CreateTags(ctx context.Context, input *ec2.CreateTagsInput) (*ec2.CreateTagsOutput, error) {
-	return c.ec2Client.CreateTags(ctx, input)
+func (c *VpcEndpoint) CreateTags(ctx context.Context, input *ec2.CreateTagsInput) (*ec2.CreateTagsOutput, error) {
+	return c.EC2API.CreateTags(ctx, input)
 }
 
 // ListTagsForResource will fetch tags of a hosted zone or healthcheck
-func (c *AWSClient) ListTagsForResource(ctx context.Context, params *route53.ListTagsForResourceInput) (*route53.ListTagsForResourceOutput, error) {
-	return c.route53Client.ListTagsForResource(ctx, params)
+func (c *VpcEndpoint) ListTagsForResource(ctx context.Context, params *route53.ListTagsForResourceInput) (*route53.ListTagsForResourceOutput, error) {
+	return c.Route53API.ListTagsForResource(ctx, params)
 }
 
 // ChangeTagsForResource adds, edits, or deletes tags for a health check or a hosted zone.
-func (c *AWSClient) ChangeTagsForResource(ctx context.Context, params *route53.ChangeTagsForResourceInput) (*route53.ChangeTagsForResourceOutput, error) {
-	return c.route53Client.ChangeTagsForResource(ctx, params)
+func (c *VpcEndpoint) ChangeTagsForResource(ctx context.Context, params *route53.ChangeTagsForResourceInput) (*route53.ChangeTagsForResourceOutput, error) {
+	return c.Route53API.ChangeTagsForResource(ctx, params)
 }

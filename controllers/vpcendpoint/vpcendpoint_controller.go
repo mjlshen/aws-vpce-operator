@@ -45,8 +45,8 @@ type VpcEndpointReconciler struct {
 	Recorder  record.EventRecorder
 
 	log                    logr.Logger
-	awsClient              *aws_client.AWSClient
-	awsAssociatedVpcClient *aws_client.VpcAssociationClient
+	awsClient              *aws_client.VpcEndpoint
+	awsAssociatedVpcClient *aws_client.VpcAssociation
 	clusterInfo            *clusterInfo
 }
 

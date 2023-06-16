@@ -61,7 +61,7 @@ func TestAWSClient_GetVpcEndpointServiceAZs(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			client := AWSClient{ec2Client: mockAvoEC2API{describeVpcEndpointServicesResp: test.resp}}
+			client := VpcEndpoint{EC2API: mockAvoEC2API{describeVpcEndpointServicesResp: test.resp}}
 			_, err := client.GetVpcEndpointServiceAZs(context.TODO(), test.serviceName)
 			if err != nil {
 				if !test.expectErr {

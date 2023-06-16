@@ -31,13 +31,13 @@ import (
 
 // FilterClusterNodeSecurityGroupsByDefaultTags describes the security groups attached to the cluster nodes
 // by filtering by the clusterTag and expected Name tags
-func (c *AWSClient) FilterClusterNodeSecurityGroupsByDefaultTags(ctx context.Context, infraName string) (*ec2.DescribeSecurityGroupsOutput, error) {
+func (c *VpcEndpoint) FilterClusterNodeSecurityGroupsByDefaultTags(ctx context.Context, infraName string) (*ec2.DescribeSecurityGroupsOutput, error) {
 	clusterTag, err := util.GetClusterTagKey(infraName)
 	if err != nil {
 		return nil, err
 	}
 
-	return c.ec2Client.DescribeSecurityGroups(ctx, &ec2.DescribeSecurityGroupsInput{
+	return c.EC2API.DescribeSecurityGroups(ctx, &ec2.DescribeSecurityGroupsInput{
 		Filters: []types.Filter{
 			{
 				Name:   aws.String("tag-key"),
@@ -56,13 +56,13 @@ func (c *AWSClient) FilterClusterNodeSecurityGroupsByDefaultTags(ctx context.Con
 
 // FilterSecurityGroupByDefaultTags describes the security group attached to the VPC Endpoint this operator manages
 // by filtering by the clusterTag and operator tag
-func (c *AWSClient) FilterSecurityGroupByDefaultTags(ctx context.Context, infraName, sgNameTag string) (*ec2.DescribeSecurityGroupsOutput, error) {
+func (c *VpcEndpoint) FilterSecurityGroupByDefaultTags(ctx context.Context, infraName, sgNameTag string) (*ec2.DescribeSecurityGroupsOutput, error) {
 	clusterTag, err := util.GetClusterTagKey(infraName)
 	if err != nil {
 		return nil, err
 	}
 
-	return c.ec2Client.DescribeSecurityGroups(ctx, &ec2.DescribeSecurityGroupsInput{
+	return c.EC2API.DescribeSecurityGroups(ctx, &ec2.DescribeSecurityGroupsInput{
 		Filters: []types.Filter{
 			{
 				Name:   aws.String("tag:Name"),
@@ -81,7 +81,7 @@ func (c *AWSClient) FilterSecurityGroupByDefaultTags(ctx context.Context, infraN
 }
 
 // FilterSecurityGroupById describes a specific security group by ID
-func (c *AWSClient) FilterSecurityGroupById(ctx context.Context, groupId string) (*ec2.DescribeSecurityGroupsOutput, error) {
+func (c *VpcEndpoint) FilterSecurityGroupById(ctx context.Context, groupId string) (*ec2.DescribeSecurityGroupsOutput, error) {
 	if groupId == "" {
 		// Otherwise, AWS will return all security groups (interpreting, no specified filter)
 		return &ec2.DescribeSecurityGroupsOutput{}, nil
@@ -90,7 +90,7 @@ func (c *AWSClient) FilterSecurityGroupById(ctx context.Context, groupId string)
 	input := &ec2.DescribeSecurityGroupsInput{
 		GroupIds: []string{groupId},
 	}
-	resp, err := c.ec2Client.DescribeSecurityGroups(ctx, input)
+	resp, err := c.EC2API.DescribeSecurityGroups(ctx, input)
 	if err != nil {
 		var ae smithy.APIError
 		if errors.As(err, &ae) {
@@ -105,7 +105,7 @@ func (c *AWSClient) FilterSecurityGroupById(ctx context.Context, groupId string)
 }
 
 // CreateSecurityGroup creates a security group with the specified name and cluster tag key in a specified VPC
-func (c *AWSClient) CreateSecurityGroup(ctx context.Context, name, vpcId, tagKey string) (*ec2.CreateSecurityGroupOutput, error) {
+func (c *VpcEndpoint) CreateSecurityGroup(ctx context.Context, name, vpcId, tagKey string) (*ec2.CreateSecurityGroupOutput, error) {
 	tags, err := util.GenerateAwsTags(name, tagKey)
 	if err != nil {
 		return nil, err
@@ -123,13 +123,13 @@ func (c *AWSClient) CreateSecurityGroup(ctx context.Context, name, vpcId, tagKey
 		VpcId: &vpcId,
 	}
 
-	sg, err := c.ec2Client.CreateSecurityGroup(ctx, input)
+	sg, err := c.EC2API.CreateSecurityGroup(ctx, input)
 	if err != nil {
 		return nil, err
 	}
 
 	// Wait up to one minute for the security group to be created.
-	waiter := ec2.NewSecurityGroupExistsWaiter(c.ec2Client)
+	waiter := ec2.NewSecurityGroupExistsWaiter(c.EC2API)
 	if err := waiter.Wait(ctx, &ec2.DescribeSecurityGroupsInput{GroupIds: []string{*sg.GroupId}}, 1*time.Minute); err != nil {
 		return nil, err
 	}
@@ -138,12 +138,12 @@ func (c *AWSClient) CreateSecurityGroup(ctx context.Context, name, vpcId, tagKey
 }
 
 // DeleteSecurityGroup deletes a security group with the specified ID
-func (c *AWSClient) DeleteSecurityGroup(ctx context.Context, groupId string) (*ec2.DeleteSecurityGroupOutput, error) {
+func (c *VpcEndpoint) DeleteSecurityGroup(ctx context.Context, groupId string) (*ec2.DeleteSecurityGroupOutput, error) {
 	input := &ec2.DeleteSecurityGroupInput{
 		GroupId: aws.String(groupId),
 	}
 
-	resp, err := c.ec2Client.DeleteSecurityGroup(ctx, input)
+	resp, err := c.EC2API.DeleteSecurityGroup(ctx, input)
 	if err != nil {
 		var ae smithy.APIError
 		if errors.As(err, &ae) {

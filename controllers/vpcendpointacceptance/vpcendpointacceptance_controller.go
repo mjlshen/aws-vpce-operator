@@ -44,7 +44,7 @@ type VpcEndpointAcceptanceReconciler struct {
 	Scheme *runtime.Scheme
 
 	log       logr.Logger
-	awsClient *aws_client.VpcEndpointAcceptanceAWSClient
+	awsClient *aws_client.VpcEndpointAcceptance
 }
 
 //+kubebuilder:rbac:groups=avo.openshift.io,resources=vpcendpointacceptances,verbs=get;list;watch;create;update;patch;delete

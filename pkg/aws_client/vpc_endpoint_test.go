@@ -64,7 +64,7 @@ func TestAWSClient_SelectVPCForVPCEndpoint(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			client := AWSClient{ec2Client: mockAvoEC2API{describeVpcEndpointResp: test.resp}}
+			client := VpcEndpoint{EC2API: mockAvoEC2API{describeVpcEndpointResp: test.resp}}
 			actualId, err := client.SelectVPCForVPCEndpoint(context.TODO(), test.ids...)
 			if err != nil {
 				assert.Error(t, err)
