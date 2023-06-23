@@ -57,8 +57,9 @@ func init() {
 	// Add config.openshift.io/v1
 	utilruntime.Must(configv1.Install(scheme))
 
-	//Add hypershift.openshift.io for the hostedcontrolplanes CR
-	utilruntime.Must(hyperv1beta1.AddToScheme(scheme))
+	// Add hypershift.openshift.io for the hostedcontrolplanes CR
+	// Do not handle error when the HyperShift operator is not installed and just silently skip
+	hyperv1beta1.AddToScheme(scheme)
 
 	// Add aws.managed.openshift.io/v1alpha1 for the AccountList CR
 	utilruntime.Must(aaov1alpha1.AddToScheme(scheme))
